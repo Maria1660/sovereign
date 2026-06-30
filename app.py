@@ -13,16 +13,23 @@ st.sidebar.header("Control Panel")
 country = st.sidebar.selectbox("Select Country to Analyze", ["United States", "United Kingdom", "Japan"])
 ticker_dict = {"United States": "^TNX", "United Kingdom": "^IEX", "Japan": "GJGB:IND"}
 
-# 3. Fetch Financial Data (Bond Yields)
+# 3. Fetch Financial Data (Bond Yields with Ivy League Rate Limit Protection)
+@st.cache_data(ttl=600)  # Keeps data in memory for 10 minutes so Yahoo won't block you
+def get_bond_data(ticker):
+    try:
+        return yf.download(ticker, period="1mo", interval="1d")
+    except Exception:
+        return pd.DataFrame()
+
 st.write(f"### 📈 10-Year Government Bond Yield: {country}")
 bond_ticker = ticker_dict[country]
-bond_data = yf.download(bond_ticker, period="1mo", interval="1d")
+bond_data = get_bond_data(bond_ticker)
 
 if not bond_data.empty:
     chart_data = bond_data['Close']
     st.line_chart(chart_data)
 else:
-    st.error("Failed to fetch bond data. Market might be closed.")
+    st.error("Yahoo Finance rate limit hit. Please click 'Reboot App' in the settings menu or wait a few minutes.")
 
 # 4. Fetch Political News Data (Securely via Secrets)
 st.write(f"### 📰 Recent Political Context for {country}")
