@@ -41,4 +41,4 @@ try:
         st.write(article['description'])
         st.markdown("---")
 except Exception as e:
-    
+    st.info("💡 Make sure to add your NEWS_API_KEY inside your Streamlit Cloud Advanced Settings to see news headlines here!")
