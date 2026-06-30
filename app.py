@@ -11,7 +11,7 @@ st.subheader("Tracking how political shocks manipulate global bond markets.")
 # 2. Sidebar Configuration (User Inputs)
 st.sidebar.header("Control Panel")
 country = st.sidebar.selectbox("Select Country to Analyze", ["United States", "United Kingdom", "Japan"])
-ticker_dict = {"United States": "^TNX", "United Kingdom": "^IEX", "Japan": "^JG10"} 
+ticker_dict = {"United States": "^TNX", "United Kingdom": "^IEX", "Japan": "GJGB:IND"}
 
 # 3. Fetch Financial Data (Bond Yields)
 st.write(f"### 📈 10-Year Government Bond Yield: {country}")
