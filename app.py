@@ -76,49 +76,36 @@ st.markdown("""
 """, unsafe_allowed_html=True)
 
 st.title("SovereignDebt Pulse")
-st.write("Interact with country regions across the global mapping layer to isolate macro datasets.")
 
-# Load Plotly's built-in global dataset to access all countries automatically
-global_df = px.data.gapminder().query("year == 2007")
-
-# Render a full, clickable vector choropleth map instead of scattered points
-fig = px.choropleth(
-    global_df,
-    locations="iso_alpha",
-    color_discrete_sequence=["#1C212B"], 
-    hover_name="country",
-    projection="natural earth"
+# Use a clean, instant drop-down menu to switch countries instead of the buggy map click event
+active_country = st.selectbox(
+    "Select Target Vector Node", 
+    ["United States", "United Kingdom", "Japan", "Germany", "France", "Canada", "Australia", "India", "Brazil", "South Africa"]
 )
 
+# Coordinates for the visualization map
+map_coordinates = {
+    "United States": [37.0902, -95.7129], "United Kingdom": [55.3781, -3.4360],
+    "Japan": [36.2048, 138.2529], "Germany": [51.1657, 10.4515],
+    "France": [46.2276, 2.2137], "Canada": [56.1304, -106.3468],
+    "Australia": [-25.2744, 133.7751], "India": [20.5937, 78.9629],
+    "Brazil": [-14.2350, -51.9253], "South Africa": [-30.5595, 22.9375]
+}
+
+selected_lat = map_coordinates[active_country][0]
+selected_lon = map_coordinates[active_country][1]
+
+# Create a fast static map pinpointing your current selection
+map_df = pd.DataFrame({'Country': [active_country], 'Latitude': [selected_lat], 'Longitude': [selected_lon]})
+fig = px.scatter_geo(map_df, lat='Latitude', lon='Longitude', hover_name='Country', projection='natural earth')
 fig.update_layout(
     template='plotly_dark',
-    geo=dict(
-        showland=True, landcolor='#161B22',
-        showocean=True, oceancolor='#0D1117',
-        showcountries=True, countrycolor='#30363D',
-        showframe=False
-    ),
+    geo=dict(showland=True, landcolor='#161B22', showocean=True, oceancolor='#0D1117', showcountries=True, countrycolor='#30363D', showframe=False),
     margin=dict(l=0, r=0, t=10, b=0),
-    height=450,
-    showlegend=False
+    height=300
 )
-fig.update_traces(
-    marker_line_color='#30363D', 
-    marker_line_width=1,
-    selected_marker_opacity=1,
-    unselected_marker_opacity=0.4
-)
-
-# Track interface country selections dynamically via map clicks
-map_selection = st.plotly_chart(fig, use_container_width=True, on_select="rerun")
-
-# Establish default context values
-active_country = "United States"
-
-# Detect which specific country polygon was clicked
-if map_selection and "selection" in map_selection and map_selection["selection"]["points"]:
-    node_idx = map_selection["selection"]["points"]["point_number"]
-    active_country = global_df.iloc[node_idx]['country']
+fig.update_traces(marker=dict(size=16, color='#00D4B2', symbol='circle'))
+st.plotly_chart(fig, use_container_width=True, key="static_map")
 
 st.markdown(f"<h2 style='font-size:1.5rem; margin-top:20px; color:#FFFFFF;'>Selected Target Vector: {active_country}</h2>", unsafe_allowed_html=True)
 
