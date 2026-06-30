@@ -1,12 +1,10 @@
 import streamlit as st
-import plotly.express as px
-import pandas as pd
 from newsapi import NewsApiClient
 
 # Layout configuration
 st.set_page_config(layout="wide")
 
-# Premium custom CSS to enforce a high-end fintech dashboard aesthetic
+# Custom CSS styling
 st.markdown("""
     <style>
         .reportview-container { background: #0E1117; }
@@ -77,35 +75,11 @@ st.markdown("""
 
 st.title("SovereignDebt Pulse")
 
-# Use a clean drop-down menu to switch countries safely
+# Secure layout select box component
 active_country = st.selectbox(
     "Select Target Vector Node", 
     ["United States", "United Kingdom", "Japan", "Germany", "France", "Canada", "Australia", "India", "Brazil", "South Africa"]
 )
-
-# Coordinates for the visualization map
-map_coordinates = {
-    "United States": [37.0902, -95.7129], "United Kingdom": [55.3781, -3.4360],
-    "Japan": [36.2048, 138.2529], "Germany": [51.1657, 10.4515],
-    "France": [46.2276, 2.2137], "Canada": [56.1304, -106.3468],
-    "Australia": [-25.2744, 133.7751], "India": [20.5937, 78.9629],
-    "Brazil": [-14.2350, -51.9253], "South Africa": [-30.5595, 22.9375]
-}
-
-selected_lat = map_coordinates[active_country]
-selected_lon = map_coordinates[active_country]
-
-# Create map visualization
-map_df = pd.DataFrame({'Country': [active_country], 'Latitude': [selected_lat], 'Longitude': [selected_lon]})
-fig = px.scatter_geo(map_df, lat='Latitude', lon='Longitude', hover_name='Country', projection='natural earth')
-fig.update_layout(
-    template='plotly_dark',
-    geo=dict(showland=True, landcolor='#161B22', showocean=True, oceancolor='#0D1117', showcountries=True, countrycolor='#30363D', showframe=False),
-    margin=dict(l=0, r=0, t=10, b=0),
-    height=300
-)
-fig.update_traces(marker=dict(size=16, color='#00D4B2', symbol='circle'))
-st.plotly_chart(fig, use_container_width=True, key="static_map")
 
 st.markdown(f"<h2 style='font-size:1.5rem; margin-top:20px; color:#FFFFFF;'>Selected Target Vector: {active_country}</h2>", unsafe_allowed_html=True)
 
