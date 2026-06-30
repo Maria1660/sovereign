@@ -1,51 +1,87 @@
 import streamlit as st
-import yfinance as yf
-from newsapi import NewsApiClient
+import plotly.express as px
 import pandas as pd
+from newsapi import NewsApiClient
 
-# 1. Setup App Title and Layout
+# Layout configuration
 st.set_page_config(layout="wide")
-st.title("🏛️ SovereignDebt Pulse")
-st.subheader("Tracking how political shocks manipulate global bond markets.")
+st.title("SovereignDebt Pulse")
+st.write("Select a coordinate point on the world map to view country-specific financial datasets and regional political news side-by-side.")
 
-# 2. Sidebar Configuration (User Inputs)
-st.sidebar.header("Control Panel")
-country = st.sidebar.selectbox("Select Country to Analyze", ["United States", "United Kingdom", "Japan"])
-ticker_dict = {"United States": "^TNX", "United Kingdom": "^IEX", "Japan": "GJGB:IND"}
+# Map data initialization 
+map_data = pd.DataFrame({
+    'Country': ['United States', 'United Kingdom', 'Japan', 'Germany'],
+    'Latitude': [37.0902, 55.3781, 36.2048, 51.1657],
+    'Longitude': [-95.7129, -3.4360, 138.2529, 10.4515]
+})
 
-# 3. Fetch Financial Data (Bond Yields with Ivy League Rate Limit Protection)
-@st.cache_data(ttl=600)  # Keeps data in memory for 10 minutes so Yahoo won't block you
-def get_bond_data(ticker):
-    try:
-        return yf.download(ticker, period="1mo", interval="1d")
-    except Exception:
-        return pd.DataFrame()
+# Render a minimal global dark map layout
+fig = px.scatter_geo(
+    map_data,
+    lat='Latitude',
+    lon='Longitude',
+    hover_name='Country',
+    projection='natural earth',
+    title='Global Intelligence Coordinates'
+)
 
-st.write(f"### 📈 10-Year Government Bond Yield: {country}")
-bond_ticker = ticker_dict[country]
-bond_data = get_bond_data(bond_ticker)
+fig.update_layout(
+    template='plotly_dark',
+    geo=dict(
+        showland=True, landcolor='#1E1E1E',
+        showocean=True, oceancolor='#0E1117',
+        showcountries=True, countrycolor='#333333'
+    ),
+    margin=dict(l=0, r=0, t=40, b=0)
+)
+fig.update_traces(marker=dict(size=12, color='#00D4B2', symbol='circle'))
 
-if not bond_data.empty:
-    chart_data = bond_data['Close']
-    st.line_chart(chart_data)
-else:
-    st.error("Yahoo Finance rate limit hit. Please click 'Reboot App' in the settings menu or wait a few minutes.")
+# Display map on frontend and listen for user click coordinates
+selected_points = st.plotly_chart(fig, use_container_width=True, on_select="rerun")
 
-# 4. Fetch Political News Data (Securely via Secrets)
-st.write(f"### 📰 Recent Political Context for {country}")
+# Default country choice when nothing is clicked
+target_country = "United States"
+
+# Detect interactive clicks on map nodes
+if selected_points and "selection" in selected_points and selected_points["selection"]["points"]:
+    point_index = selected_points["selection"]["points"][0]["point_number"]
+    target_country = map_data.iloc[point_index]['Country']
+
+st.write(f"### Current Node Analysis: {target_country}")
+
+# Split screen columns
+left_col, right_col = st.columns(2)
+
 try:
-    # This reads the password key from Streamlit Cloud securely
-    newsapi = NewsApiClient(api_key=st.secrets["NEWS_API_KEY"]) 
+    newsapi = NewsApiClient(api_key=st.secrets["NEWS_API_KEY"])
     
-    headlines = newsapi.get_everything(q=f"{country} AND (politics OR election OR tariff OR government)",
-                                      language='en',
-                                      sort_by='publishedAt',
-                                      page_size=5)
-    
-    for article in headlines['articles']:
-        st.markdown(f"**[{article['title']}]({article['url']})**")
-        st.caption(f"Source: {article['source']['name']} | Published: {article['publishedAt'][:10]}")
-        st.write(article['description'])
-        st.markdown("---")
+    # Column 1: Financial News Panel
+    with left_col:
+        st.subheader("Financial Dataset")
+        fin_data = newsapi.get_everything(
+            q=f"{target_country} AND (finance OR economy OR central bank OR bonds)",
+            language='en', sort_by='publishedAt', page_size=3
+        )
+        for article in fin_data['articles']:
+            with st.container(border=True):
+                st.markdown(f"**{article['title']}**")
+                st.caption(f"Source: {article['source']['name']} | Date: {article['publishedAt'][:10]}")
+                st.write(article['description'] if article['description'] else "Metadata unavailable.")
+                st.link_button("Open Source Link", article['url'])
+
+    # Column 2: Political Briefing Panel
+    with right_col:
+        st.subheader("Political Briefing")
+        pol_data = newsapi.get_everything(
+            q=f"{target_country} AND (politics OR government OR election OR policy)",
+            language='en', sort_by='publishedAt', page_size=3
+        )
+        for article in pol_data['articles']:
+            with st.container(border=True):
+                st.markdown(f"**{article['title']}**")
+                st.caption(f"Source: {article['source']['name']} | Date: {article['publishedAt'][:10]}")
+                st.write(article['description'] if article['description'] else "Metadata unavailable.")
+                st.link_button("Open Source Link", article['url'])
+
 except Exception as e:
-    st.info("💡 Make sure to add your NEWS_API_KEY inside your Streamlit Cloud Advanced Settings to see news headlines here!")
+    st.info("System configuration requires an active NEWS_API_KEY inside the Advanced Settings panel to populate data pipelines.")
