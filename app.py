@@ -52,7 +52,7 @@ def get_clean_news(search_term):
 # Левая колонка: Финансы
 with left_column:
     st.subheader("Financial News Feed")
-    financial_data = get_clean_news(f'{active_country} AND (finance OR economy OR "central bank" OR bonds)')
+    financial_data = get_clean_news(f"{active_country} finance economy")
     
     if financial_data:
         for article in financial_data:
