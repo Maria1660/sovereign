@@ -77,7 +77,7 @@ st.markdown("""
 
 st.title("SovereignDebt Pulse")
 
-# Use a clean, instant drop-down menu to switch countries instead of the buggy map click event
+# Use a clean drop-down menu to switch countries safely
 active_country = st.selectbox(
     "Select Target Vector Node", 
     ["United States", "United Kingdom", "Japan", "Germany", "France", "Canada", "Australia", "India", "Brazil", "South Africa"]
@@ -92,10 +92,10 @@ map_coordinates = {
     "Brazil": [-14.2350, -51.9253], "South Africa": [-30.5595, 22.9375]
 }
 
-selected_lat = map_coordinates[active_country][0]
-selected_lon = map_coordinates[active_country][1]
+selected_lat = map_coordinates[active_country]
+selected_lon = map_coordinates[active_country]
 
-# Create a fast static map pinpointing your current selection
+# Create map visualization
 map_df = pd.DataFrame({'Country': [active_country], 'Latitude': [selected_lat], 'Longitude': [selected_lon]})
 fig = px.scatter_geo(map_df, lat='Latitude', lon='Longitude', hover_name='Country', projection='natural earth')
 fig.update_layout(
